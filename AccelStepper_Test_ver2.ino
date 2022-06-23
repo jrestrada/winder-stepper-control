@@ -81,6 +81,7 @@ void set_motorX(){
   stepperX.setMaxSpeed(set_max_speed_X);
   stepperX.disableOutputs();
 }
+
 //The function runSpeed() should work at the speed set by setSpeed()
 //The functions setMaxSpeed() and setAcceleration() work with the function run().
 

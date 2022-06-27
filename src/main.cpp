@@ -8,14 +8,14 @@ AccelStepper stepperX(AccelStepper::DRIVER,5,7);
 
 const int set_accel_X = 800;
 const int set_max_speed_X = 2000;
-int set_speed = 1500;
+int set_speed = 2000;
 float x_dir = 500.0;
 float x_speed = 0;
 byte x_home_on = 1;
 byte x_end_on = 1;
 int counterX = 0;
 unsigned long futureMillis;
-const unsigned long bounce_period = 2000;
+const unsigned long bounce_period = 2000; 
 
 void move_stepperX(float Xspeed_input){
   stepperX.enableOutputs();
@@ -32,6 +32,7 @@ void set_motorX(){
   stepperX.disableOutputs();
 }
 
+
 void setup(){  
    Serial.begin(9600);
    pinMode(X_home_switch,INPUT_PULLUP);
@@ -44,23 +45,29 @@ void setup(){
 void loop(){  
   x_home_on= digitalRead(X_home_switch);
   x_end_on= digitalRead(X_end_switch);
-  x_dir = analogRead(vry);
+  x_dir= analogRead(vry);
   if (x_home_on == 0) {
     Serial.println("Reached Home");
     Serial.println(counterX);
     counterX = 0;
     Serial.println(counterX);
+    Serial.println(0.001*millis());
     futureMillis = millis() + bounce_period;
     while (millis() < futureMillis){
       move_stepperX(-set_speed);
     }
+    Serial.println(counterX);
+    Serial.println(0.001*millis());
+
   } else if (x_end_on == 0) {
     futureMillis = millis() + bounce_period;
     Serial.println("Reached End");
+    Serial.println(0.001*millis());
     Serial.println(counterX);
     while (millis() < futureMillis){
       move_stepperX(set_speed);
     }
+    Serial.println(0.001*millis());
 
   } else {
     if (x_dir > 700){

@@ -15,15 +15,14 @@ byte x_home_on = 1;
 byte x_end_on = 1;
 int counterX = 0;
 unsigned long futureMillis;
-const unsigned long bounce_period = 2000; 
+const unsigned int bounce_period = 2000; 
+const 
 
 void move_stepperX(float Xspeed_input){
   stepperX.enableOutputs();
-  stepperX.setAcceleration(set_accel_X);
-  stepperX.setMaxSpeed(set_max_speed_X);
   stepperX.setSpeed(Xspeed_input);  
   stepperX.runSpeed();
-  counterX += Xspeed_input/abs(Xspeed_input);
+  counterX -= Xspeed_input/abs(Xspeed_input);
 }
 
 void set_motorX(){
@@ -32,6 +31,41 @@ void set_motorX(){
   stepperX.disableOutputs();
 }
 
+void move_stepper_by_time(float speed = set_speed, unsigned long time = bounce_period){
+  futureMillis = millis() + time;
+  while (millis() < futureMillis){
+    move_stepperX(speed);
+  }
+}
+
+void go_home(){
+  bool reached_home = false;
+  while (reached_home == false) {
+    x_home_on= digitalRead(X_home_switch);
+    if (x_home_on == 0){
+      x_home_on = true;
+      counterX = 0;
+      move_stepper_by_time(-set_speed, 7125);
+      Serial.print("distance :");
+      Serial.print(counterX);
+      break;
+    } else {
+      move_stepperX(set_speed);
+    }
+  } 
+}
+
+void limitbounce(byte whichend = 0){
+  //  0 is home, 1 is end
+  Serial.println("Reached:");
+  Serial.println(whichend);
+  counterX = 0;
+  if (whichend == 0){
+    move_stepper_by_time(-set_speed, bounce_period);
+  } else if (whichend == 1) {
+    move_stepper_by_time(set_speed, bounce_period);
+  }
+}
 
 void setup(){  
    Serial.begin(9600);
@@ -39,7 +73,8 @@ void setup(){
    pinMode(X_end_switch,INPUT_PULLUP);
    set_motorX();
    counterX = 0;
-   Serial.print("initializing");
+   Serial.println("initializing");
+   go_home();
 }
 
 void loop(){  
@@ -47,34 +82,13 @@ void loop(){
   x_end_on= digitalRead(X_end_switch);
   x_dir= analogRead(vry);
   if (x_home_on == 0) {
-    Serial.println("Reached Home");
-    Serial.println(counterX);
-    counterX = 0;
-    Serial.println(counterX);
-    Serial.println(0.001*millis());
-    futureMillis = millis() + bounce_period;
-    while (millis() < futureMillis){
-      move_stepperX(-set_speed);
-    }
-    Serial.println(counterX);
-    Serial.println(0.001*millis());
-
+    limitbounce(0);
   } else if (x_end_on == 0) {
-    futureMillis = millis() + bounce_period;
-    Serial.println("Reached End");
-    Serial.println(0.001*millis());
-    Serial.println(counterX);
-    while (millis() < futureMillis){
-      move_stepperX(set_speed);
-    }
-    Serial.println(0.001*millis());
-
+    limitbounce(1);
   } else {
     if (x_dir > 700){
-      //  x_speed = map(x_dir,1023,0,-1*set_max_speed_X,set_max_speed_X);
       x_speed = -set_speed;
     }else if (x_dir <400 ){
-      //  x_speed = map(x_dir,1023,0,-1*set_max_speed_X,set_max_speed_X);
       x_speed = set_speed;
     }else{
        x_speed = 0;

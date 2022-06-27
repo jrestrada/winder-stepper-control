@@ -8,12 +8,12 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "/home/josue/code/windercontrol/AccelStepper_Test_ver2/include",
-                "/home/josue/code/windercontrol/AccelStepper_Test_ver2/src",
-                "/home/josue/code/windercontrol/AccelStepper_Test_ver2/.pio/libdeps/nanoatmega328/AccelStepper/src",
+                "/home/josue/code/windercontrol/winder-stepper-control/include",
+                "/home/josue/code/windercontrol/winder-stepper-control/src",
+                "/home/josue/code/windercontrol/winder-stepper-control/.pio/libdeps/nanoatmega328/AccelStepper/src",
                 "/home/josue/.platformio/packages/framework-arduino-avr/cores/arduino",
                 "/home/josue/.platformio/packages/framework-arduino-avr/variants/eightanaloginputs",
-                "/home/josue/code/windercontrol/AccelStepper_Test_ver2/.pio/libdeps/nanoatmega328/Unity/src",
+                "/home/josue/code/windercontrol/winder-stepper-control/.pio/libdeps/nanoatmega328/Unity/src",
                 "/home/josue/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
                 "/home/josue/.platformio/packages/framework-arduino-avr/libraries/HID/src",
                 "/home/josue/.platformio/packages/framework-arduino-avr/libraries/SPI/src",
@@ -24,12 +24,12 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "/home/josue/code/windercontrol/AccelStepper_Test_ver2/include",
-                    "/home/josue/code/windercontrol/AccelStepper_Test_ver2/src",
-                    "/home/josue/code/windercontrol/AccelStepper_Test_ver2/.pio/libdeps/nanoatmega328/AccelStepper/src",
+                    "/home/josue/code/windercontrol/winder-stepper-control/include",
+                    "/home/josue/code/windercontrol/winder-stepper-control/src",
+                    "/home/josue/code/windercontrol/winder-stepper-control/.pio/libdeps/nanoatmega328/AccelStepper/src",
                     "/home/josue/.platformio/packages/framework-arduino-avr/cores/arduino",
                     "/home/josue/.platformio/packages/framework-arduino-avr/variants/eightanaloginputs",
-                    "/home/josue/code/windercontrol/AccelStepper_Test_ver2/.pio/libdeps/nanoatmega328/Unity/src",
+                    "/home/josue/code/windercontrol/winder-stepper-control/.pio/libdeps/nanoatmega328/Unity/src",
                     "/home/josue/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
                     "/home/josue/.platformio/packages/framework-arduino-avr/libraries/HID/src",
                     "/home/josue/.platformio/packages/framework-arduino-avr/libraries/SPI/src",

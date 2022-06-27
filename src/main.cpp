@@ -14,7 +14,6 @@ float x_speed = 0;
 byte x_home_on = 1;
 byte x_end_on = 1;
 int counterX = 0;
-
 unsigned long futureMillis;
 const unsigned long bounce_period = 2000;
 

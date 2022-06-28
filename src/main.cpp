@@ -1,22 +1,33 @@
 #include <AccelStepper.h>
 
+// Initialize Stepper Library
 AccelStepper stepperX(AccelStepper::DRIVER,5,7);
 
+// Define Arduino Pins
 #define X_home_switch 3
 #define X_end_switch 2
 #define vry A1
 
+// Stepper motor speed values
 const int set_accel_X = 800;
 const int set_max_speed_X = 2000;
 int set_speed = 2000;
 float x_dir = 500.0;
 float x_speed = 0;
+
+//Time values
+const unsigned int bounce_period = 2000; 
+unsigned long futureMillis;
+int secs = 0;
+
+//Counters and bools
+int counterX = 0;
 byte x_home_on = 1;
 byte x_end_on = 1;
-int counterX = 0;
-unsigned long futureMillis;
-const unsigned int bounce_period = 2000; 
-const 
+
+// Serial parameters
+const int BUFFER_SIZE = 100;
+byte buf[BUFFER_SIZE];
 
 void move_stepperX(float Xspeed_input){
   stepperX.enableOutputs();
@@ -86,13 +97,26 @@ void loop(){
   } else if (x_end_on == 0) {
     limitbounce(1);
   } else {
+
+    // if (counterX < 91600){
+      // x_speed = -set_speed;
+      // move_stepperX(x_speed);
+    // }
+
+    if (Serial.available()>0) {
+      secs = Serial.readBytesUntil('\n', buf, BUFFER_SIZE);
+    }
+
+    move_stepper_by_time(-set_speed);
+
     if (x_dir > 700){
       x_speed = -set_speed;
+      move_stepperX(x_speed); 
     }else if (x_dir <400 ){
       x_speed = set_speed;
+      move_stepperX(x_speed);
     }else{
        x_speed = 0;
     }
   }
-  move_stepperX(x_speed);
 }

@@ -107,7 +107,7 @@ void loop(){
       secs = Serial.readBytesUntil('\n', buf, BUFFER_SIZE);
     }
 
-    move_stepper_by_time(-set_speed);
+    move_stepper_by_time(-set_speed, 1000*secs);
 
     if (x_dir > 700){
       x_speed = -set_speed;

@@ -18,13 +18,13 @@ float x_speed = 0;
 //Time values
 const unsigned int bounce_period = 2000; 
 unsigned long futureMillis;
-int secs = 0;
+float secs = 0;
 
 //Counters and bools
 long int counterX = 0;
 byte x_home_on = 1;
 byte x_end_on = 1;
-long int end_limit = 200000;
+long int end_limit = 450000;
 int flipper = 1;
 
 // Serial parameters
@@ -49,7 +49,7 @@ void update_counter(float Xspeed_input) {
 }
 
 void flip_switch() {
-  Serial.println("damelooo");
+  Serial.println("flipped direction");
   if (flipper == 1) {
     flipper = -1;
   } else if (flipper == -1) {
@@ -63,7 +63,7 @@ void set_motorX(){
   stepperX.disableOutputs();
 }
 
-void move_stepper_by_time(float speed = set_speed, unsigned long time = bounce_period){
+void move_stepper_by_time(float speed = set_speed, unsigned long time = 1){
   futureMillis = millis() + time;
   while (millis() < futureMillis){
     move_stepperX(speed);
@@ -130,7 +130,7 @@ void loop(){
   
     if (Serial.available() > 0) {
       secs = Serial.readBytesUntil('\n', buf, BUFFER_SIZE);
-      move_stepper_by_time(flipper*-1*set_speed, 1000*secs);
+      move_stepper_by_time(flipper*-1*set_speed, 52*secs);
       secs = 0;
     }
   }

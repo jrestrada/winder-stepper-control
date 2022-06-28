@@ -11,7 +11,7 @@ AccelStepper stepperX(AccelStepper::DRIVER,5,7);
 // Stepper motor speed values
 const int set_accel_X = 800;
 const int set_max_speed_X = 2000;
-int set_speed = 2000;
+const int set_speed = 2000;
 float x_dir = 500.0;
 float x_speed = 0;
 
@@ -21,9 +21,11 @@ unsigned long futureMillis;
 int secs = 0;
 
 //Counters and bools
-int counterX = 0;
+long int counterX = 0;
 byte x_home_on = 1;
 byte x_end_on = 1;
+long int end_limit = 200000;
+int flipper = 1;
 
 // Serial parameters
 const int BUFFER_SIZE = 100;
@@ -33,7 +35,26 @@ void move_stepperX(float Xspeed_input){
   stepperX.enableOutputs();
   stepperX.setSpeed(Xspeed_input);  
   stepperX.runSpeed();
-  counterX -= Xspeed_input/abs(Xspeed_input);
+  if (counterX % 500 == 0) {
+    Serial.println(counterX);
+  }
+}
+
+void update_counter(float Xspeed_input) {
+  if (Xspeed_input > 0) {
+    counterX -= 1;
+  } else if (Xspeed_input < 0) {
+    counterX += 1;
+  }
+}
+
+void flip_switch() {
+  Serial.println("damelooo");
+  if (flipper == 1) {
+    flipper = -1;
+  } else if (flipper == -1) {
+    flipper = 1;
+  }
 }
 
 void set_motorX(){
@@ -46,6 +67,7 @@ void move_stepper_by_time(float speed = set_speed, unsigned long time = bounce_p
   futureMillis = millis() + time;
   while (millis() < futureMillis){
     move_stepperX(speed);
+    update_counter(speed);
   }
 }
 
@@ -56,21 +78,23 @@ void go_home(){
     if (x_home_on == 0){
       x_home_on = true;
       counterX = 0;
+      Serial.println(counterX);
       move_stepper_by_time(-set_speed, 7125);
-      Serial.print("distance :");
-      Serial.print(counterX);
+      Serial.print("distance: ");
+      Serial.println(counterX);
       break;
     } else {
       move_stepperX(set_speed);
+      update_counter(set_speed);
     }
   } 
+  Serial.println(counterX);
 }
 
 void limitbounce(byte whichend = 0){
   //  0 is home, 1 is end
   Serial.println("Reached:");
   Serial.println(whichend);
-  counterX = 0;
   if (whichend == 0){
     move_stepper_by_time(-set_speed, bounce_period);
   } else if (whichend == 1) {
@@ -97,26 +121,17 @@ void loop(){
   } else if (x_end_on == 0) {
     limitbounce(1);
   } else {
-
-    // if (counterX < 91600){
-      // x_speed = -set_speed;
-      // move_stepperX(x_speed);
-    // }
-
-    if (Serial.available()>0) {
-      secs = Serial.readBytesUntil('\n', buf, BUFFER_SIZE);
+    
+    if (counterX >= end_limit and flipper == 1) {
+      flip_switch();
+    } else if (counterX <= 84200 and flipper == -1) {
+      flip_switch();
     }
-
-    move_stepper_by_time(-set_speed, 1000*secs);
-
-    if (x_dir > 700){
-      x_speed = -set_speed;
-      move_stepperX(x_speed); 
-    }else if (x_dir <400 ){
-      x_speed = set_speed;
-      move_stepperX(x_speed);
-    }else{
-       x_speed = 0;
+  
+    if (Serial.available() > 0) {
+      secs = Serial.readBytesUntil('\n', buf, BUFFER_SIZE);
+      move_stepper_by_time(flipper*-1*set_speed, 1000*secs);
+      secs = 0;
     }
   }
 }

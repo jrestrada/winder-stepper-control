@@ -4,134 +4,139 @@
 AccelStepper stepperX(AccelStepper::DRIVER,5,7);
 
 // Define Arduino Pins
-#define X_home_switch 3
-#define X_end_switch 2
+#define home_switch 3
+#define end_switch 2
 #define vry A1
 
 // Stepper motor speed values
-const int set_accel_X = 800;
-const int set_max_speed_X = 2000;
+// Speeds in the negative direction move the device towards the end switch
+// Speeds in the positive direction move the device towards the home switch
+
+const int set_accel = 800;
+const int set_max_speed = 2000;
 const int set_speed = 2000;
-float x_dir = 500.0;
-float x_speed = 0;
+float speed = 0;
+
+//Joystick Control Values
+float dir = 500.0;
 
 //Time values
-const unsigned int bounce_period = 2000; 
-unsigned long futureMillis;
-float secs = 0;
+const unsigned int limit_bounce_t = 2000; 
+const unsigned int homing_bounce_t = 7125;
+unsigned long future_millis;
 
-//Counters and bools
-long int counterX = 0;
-byte x_home_on = 1;
-byte x_end_on = 1;
-long int end_limit = 450000;
-int flipper = 1;
+//Movement Values
+long int positionX = 0;
+long int reel_limit_end = 450000;
+long int reel_limit_home = 84200;
+int current_direction = 1;
+int motion_rate = 52;
+float motion_cmd = 0;
+byte home_on = 1;
+byte end_on = 1;
 
 // Serial parameters
 const int BUFFER_SIZE = 100;
 byte buf[BUFFER_SIZE];
 
+void set_motorX(){
+  stepperX.setAcceleration(set_accel);
+  stepperX.setMaxSpeed(set_max_speed);
+  stepperX.disableOutputs();
+}
+
+void update_position(float Xspeed_input) {
+  if (Xspeed_input > 0) {
+    positionX -= 1;
+  } else if (Xspeed_input < 0) {
+    positionX += 1;
+  }
+}
+
 void move_stepperX(float Xspeed_input){
   stepperX.enableOutputs();
   stepperX.setSpeed(Xspeed_input);  
   stepperX.runSpeed();
-  if (counterX % 500 == 0) {
-    Serial.println(counterX);
+  update_position(Xspeed_input);
+  if (positionX % 500 == 0) {
+    Serial.println(positionX);
   }
 }
 
-void update_counter(float Xspeed_input) {
-  if (Xspeed_input > 0) {
-    counterX -= 1;
-  } else if (Xspeed_input < 0) {
-    counterX += 1;
+void reverse_direction() {
+  if (current_direction == 1) {
+    current_direction = -1;
+  } else if (current_direction == -1) {
+    current_direction = 1;
   }
 }
 
-void flip_switch() {
-  Serial.println("flipped direction");
-  if (flipper == 1) {
-    flipper = -1;
-  } else if (flipper == -1) {
-    flipper = 1;
-  }
-}
-
-void set_motorX(){
-  stepperX.setAcceleration(set_accel_X);
-  stepperX.setMaxSpeed(set_max_speed_X);
-  stepperX.disableOutputs();
-}
-
-void move_stepper_by_time(float speed = set_speed, unsigned long time = 1){
-  futureMillis = millis() + time;
-  while (millis() < futureMillis){
+void move_stepper_by_time(float speed = set_speed, unsigned long t = 1){
+  future_millis = millis() + t;
+  while (millis() < future_millis){
     move_stepperX(speed);
-    update_counter(speed);
   }
-}
-
-void go_home(){
-  bool reached_home = false;
-  while (reached_home == false) {
-    x_home_on= digitalRead(X_home_switch);
-    if (x_home_on == 0){
-      x_home_on = true;
-      counterX = 0;
-      Serial.println(counterX);
-      move_stepper_by_time(-set_speed, 7125);
-      Serial.print("distance: ");
-      Serial.println(counterX);
-      break;
-    } else {
-      move_stepperX(set_speed);
-      update_counter(set_speed);
-    }
-  } 
-  Serial.println(counterX);
 }
 
 void limitbounce(byte whichend = 0){
-  //  0 is home, 1 is end
-  Serial.println("Reached:");
+  Serial.print("Reached:");
   Serial.println(whichend);
   if (whichend == 0){
-    move_stepper_by_time(-set_speed, bounce_period);
+    move_stepper_by_time(-set_speed, limit_bounce_t);
   } else if (whichend == 1) {
-    move_stepper_by_time(set_speed, bounce_period);
+    move_stepper_by_time(set_speed, limit_bounce_t);
   }
+}
+
+void home_position(){
+  bool reached_home = false;
+  while (reached_home == false) {
+    home_on = digitalRead(home_switch);
+    if (home_on == 0){
+      reached_home = true;
+      positionX = 0;
+      Serial.println(positionX);
+      move_stepper_by_time(-set_speed, homing_bounce_t);
+      Serial.print("distance: ");
+      Serial.println(positionX);
+      break;
+    } else {
+      move_stepperX(set_speed);
+    }
+  } 
+  reel_limit_home = positionX;
+  Serial.println(positionX);
 }
 
 void setup(){  
    Serial.begin(9600);
-   pinMode(X_home_switch,INPUT_PULLUP);
-   pinMode(X_end_switch,INPUT_PULLUP);
-   set_motorX();
-   counterX = 0;
    Serial.println("initializing");
-   go_home();
+   pinMode(home_switch,INPUT_PULLUP);
+   pinMode(end_switch,INPUT_PULLUP);
+   set_motorX();
+   home_position();
 }
 
 void loop(){  
-  x_home_on= digitalRead(X_home_switch);
-  x_end_on= digitalRead(X_end_switch);
-  x_dir= analogRead(vry);
-  if (x_home_on == 0) {
+  home_on = digitalRead(home_switch);
+  end_on = digitalRead(end_switch);
+  dir = analogRead(vry);
+  if (home_on == 0) {
     limitbounce(0);
-  } else if (x_end_on == 0) {
+  } else if (end_on == 0) {
     limitbounce(1);
   } else {
     
-    if (counterX >= end_limit and flipper == 1) {
-      flip_switch();
-    } else if (counterX <= 84200 and flipper == -1) {
-      flip_switch();
+    if (positionX >= reel_limit_end and current_direction == 1) {
+      reverse_direction();
+    } else if (positionX <= reel_limit_home and current_direction == -1) {
+      reverse_direction();
     }
   
     if (Serial.available() > 0) {
-      secs = Serial.readBytesUntil('\n', buf, BUFFER_SIZE);
-      move_stepper_by_time(flipper*-1*set_speed, 52*secs);
-      secs = 0;
+      motion_cmd = Serial.readBytesUntil('\n', buf, BUFFER_SIZE);
+      move_stepper_by_time(-1*current_direction*set_speed, motion_rate*motion_cmd);
+      motion_cmd = 0;
     }
   }
 }

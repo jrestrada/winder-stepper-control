@@ -6,7 +6,6 @@ AccelStepper stepperX(AccelStepper::DRIVER,5,7);
 // Define Arduino Pins
 #define home_switch 3
 #define end_switch 2
-#define vry A1
 
 // Stepper motor speed values
 // Speeds in the negative direction move the device towards the end switch
@@ -16,9 +15,6 @@ const int set_accel = 800;
 const int set_max_speed = 2000;
 const int set_speed = 2000;
 float speed = 0;
-
-//Joystick Control Values
-float dir = 500.0;
 
 //Time values
 const unsigned int limit_bounce_t = 2000; 
@@ -31,7 +27,6 @@ long int reel_limit_end = 450000;
 long int reel_limit_home = 84200;
 int current_direction = 1;
 int motion_rate = 52;
-float motion_cmd = 0;
 byte home_on = 1;
 byte end_on = 1;
 
@@ -39,12 +34,25 @@ byte end_on = 1;
 const int BUFFER_SIZE = 100;
 byte buf[BUFFER_SIZE];
 
+// temporary array for use when parsing
+const byte numChars = 32;
+char receivedChars[numChars];
+char tempChars[numChars];        
+
+// variables to hold the parsed data
+char message_from_ROS[numChars] = {0};
+int new_direction_cmd = 0;
+float motion_cmd = 0.0;
+
+boolean newData = false;
+
 void set_motorX(){
   stepperX.setAcceleration(set_accel);
   stepperX.setMaxSpeed(set_max_speed);
   stepperX.disableOutputs();
 }
 
+// for future implementations, make positionX steps a function of Xspeed_input
 void update_position(float Xspeed_input) {
   if (Xspeed_input > 0) {
     positionX -= 1;
@@ -108,6 +116,46 @@ void home_position(){
   Serial.println(positionX);
 }
 
+void recvWithStartEndMarkers() {
+    static boolean recvInProgress = false;
+    static byte ndx = 0;
+    char startMarker = '<';
+    char endMarker = '>';
+    char rc;
+    while (Serial.available() > 0 && newData == false) {
+        rc = Serial.read();
+        if (recvInProgress == true) {
+            if (rc != endMarker) {
+              receivedChars[ndx] = rc;
+              ndx++;
+              if (ndx >= numChars) {
+                ndx = numChars - 1;
+              }
+            } else {
+              receivedChars[ndx] = '\0'; // terminate the string
+              recvInProgress = false;
+              ndx = 0;
+              newData = true;
+            }
+        } else if (rc == startMarker) {
+          recvInProgress = true;
+        }
+    }
+}
+
+void parseData() {    
+    char * strtokIndx; 
+
+    strtokIndx = strtok(tempChars,",");    
+    strcpy(message_from_ROS, strtokIndx); 
+
+    strtokIndx = strtok(NULL, ","); 
+    new_direction_cmd = atoi(strtokIndx);     
+
+    strtokIndx = strtok(NULL, ",");
+    motion_cmd = atof(strtokIndx);     
+}
+
 void setup(){  
    Serial.begin(9600);
    Serial.println("initializing");
@@ -120,7 +168,6 @@ void setup(){
 void loop(){  
   home_on = digitalRead(home_switch);
   end_on = digitalRead(end_switch);
-  dir = analogRead(vry);
   if (home_on == 0) {
     limitbounce(0);
   } else if (end_on == 0) {
@@ -133,9 +180,15 @@ void loop(){
       reverse_direction();
     }
   
-    if (Serial.available() > 0) {
-      motion_cmd = Serial.readBytesUntil('\n', buf, BUFFER_SIZE);
+    recvWithStartEndMarkers();
+    if (newData == true) {
+      strcpy(tempChars, receivedChars);     
+      parseData();
+      if (new_direction_cmd == 1) {
+        reverse_direction();
+      }
       move_stepper_by_time(-1*current_direction*set_speed, motion_rate*motion_cmd);
+      newData = false;
       motion_cmd = 0;
     }
   }

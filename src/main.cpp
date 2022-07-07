@@ -30,11 +30,7 @@ int motion_rate = 52;
 byte home_on = 1;
 byte end_on = 1;
 
-// Serial parameters
-const int BUFFER_SIZE = 100;
-byte buf[BUFFER_SIZE];
-
-// temporary array for use when parsing
+//Serial Parameters
 const byte numChars = 32;
 char receivedChars[numChars];
 char tempChars[numChars];        
@@ -66,7 +62,7 @@ void move_stepperX(float Xspeed_input){
   stepperX.setSpeed(Xspeed_input);  
   stepperX.runSpeed();
   update_position(Xspeed_input);
-  if (positionX % 500 == 0) {
+  if (positionX % 2000 == 0) {
     Serial.println(positionX);
   }
 }
@@ -144,25 +140,34 @@ void recvWithStartEndMarkers() {
 }
 
 void parseData() {    
-    char * strtokIndx; 
+  char * strtokIndx; 
+  
+  strtokIndx = strtok(tempChars,",");    
+  strcpy(message_from_ROS, strtokIndx); 
+  
+  strtokIndx = strtok(NULL, ","); 
+  new_direction_cmd = atoi(strtokIndx);     
+  
+  strtokIndx = strtok(NULL, ",");
+  motion_cmd = atof(strtokIndx);     
+}
 
-    strtokIndx = strtok(tempChars,",");    
-    strcpy(message_from_ROS, strtokIndx); 
-
-    strtokIndx = strtok(NULL, ","); 
-    new_direction_cmd = atoi(strtokIndx);     
-
-    strtokIndx = strtok(NULL, ",");
-    motion_cmd = atof(strtokIndx);     
+void showParsedData() {
+  Serial.print("Message ");
+  Serial.println(message_from_ROS);
+  Serial.print("Integer ");
+  Serial.println(new_direction_cmd);
+  Serial.print("Float ");
+  Serial.println(motion_cmd);
 }
 
 void setup(){  
-   Serial.begin(9600);
-   Serial.println("initializing");
-   pinMode(home_switch,INPUT_PULLUP);
-   pinMode(end_switch,INPUT_PULLUP);
-   set_motorX();
-   home_position();
+  Serial.begin(9600);
+  Serial.println("initializing");
+  pinMode(home_switch,INPUT_PULLUP);
+  pinMode(end_switch,INPUT_PULLUP);
+  set_motorX();
+  home_position();
 }
 
 void loop(){  
@@ -187,9 +192,11 @@ void loop(){
       if (new_direction_cmd == 1) {
         reverse_direction();
       }
-      move_stepper_by_time(-1*current_direction*set_speed, motion_rate*motion_cmd);
+      move_stepper_by_time(current_direction*set_speed, motion_rate*motion_cmd);
+      showParsedData();
       newData = false;
-      motion_cmd = 0;
     }
+    new_direction_cmd = 0;
+    motion_cmd = 0;
   }
 }
